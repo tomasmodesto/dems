@@ -26,8 +26,118 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class DashboardPage extends StatelessWidget {
+class Patient {
+  final String name;
+  final String age;
+  final String o2Level;
+  final String heartRate;
+  final String status;
+  final String room;
+  final DateTime arrivalTime;
+  bool isInTreatment;
+
+  Patient({
+    required this.name,
+    required this.age,
+    required this.o2Level,
+    required this.heartRate,
+    required this.status,
+    required this.room,
+    required this.arrivalTime,
+    this.isInTreatment = false,
+  });
+}
+
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final List<Patient> _waitingPatients = [
+    Patient(
+      name: 'Roberto Santos',
+      age: '68',
+      o2Level: '85%',
+      heartRate: '120',
+      status: 'Emergência',
+      room: 'Sala de Espera 1',
+      arrivalTime: DateTime.now().subtract(Duration(minutes: 5)),
+    ),
+    Patient(
+      name: 'Maria Silva',
+      age: '45',
+      o2Level: '98%',
+      heartRate: '85',
+      status: 'Pouco Urgente',
+      room: 'Sala de Espera 2',
+      arrivalTime: DateTime.now().subtract(Duration(minutes: 15)),
+    ),
+    Patient(
+      name: 'João Oliveira',
+      age: '72',
+      o2Level: '92%',
+      heartRate: '95',
+      status: 'Muito Urgente',
+      room: 'Sala de Espera 1',
+      arrivalTime: DateTime.now().subtract(Duration(minutes: 8)),
+    ),
+    Patient(
+      name: 'Ana Paula',
+      age: '35',
+      o2Level: '99%',
+      heartRate: '78',
+      status: 'Não Urgente',
+      room: 'Sala de Espera 3',
+      arrivalTime: DateTime.now().subtract(Duration(minutes: 25)),
+    ),
+  ];
+
+  final List<Patient> _inTreatmentPatients = [];
+
+  void _startTreatment(Patient patient) {
+    setState(() {
+      patient.isInTreatment = true;
+      _waitingPatients.remove(patient);
+      _inTreatmentPatients.add(patient);
+    });
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'emergência':
+        return ManchesterTriage.emergente;
+      case 'muito urgente':
+        return ManchesterTriage.muitoUrgente;
+      case 'urgente':
+        return ManchesterTriage.urgente;
+      case 'pouco urgente':
+        return ManchesterTriage.poucoUrgente;
+      case 'não urgente':
+        return ManchesterTriage.naoUrgente;
+      default:
+        return ManchesterTriage.poucoUrgente;
+    }
+  }
+
+  String _getTimeTarget(String status) {
+    switch (status.toLowerCase()) {
+      case 'emergência':
+        return '0 min';
+      case 'muito urgente':
+        return '10 min';
+      case 'urgente':
+        return '60 min';
+      case 'pouco urgente':
+        return '120 min';
+      case 'não urgente':
+        return '240 min';
+      default:
+        return '120 min';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,125 +204,80 @@ class DashboardPage extends StatelessWidget {
                   ),
                   SizedBox(height: 20),
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Lista de Triagem
+                        Expanded(
+                          flex: 2,
+                          child: SingleChildScrollView(
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _PriorityLevel(
-                                  label: 'Emergência',
-                                  color: ManchesterTriage.emergente,
-                                  timeTarget: '0 min',
-                                  patients: [
-                                    _PatientCard(
-                                      name: 'Roberto Santos',
-                                      age: '68',
-                                      o2Level: '85%',
-                                      heartRate: '120',
-                                      status: 'Emergência',
-                                      onTap: () => _showPatientDetails(context, 'Roberto Santos'),
-                                    ),
-                                    _PatientCard(
-                                      name: 'Marcelo Reis',
-                                      age: '75',
-                                      o2Level: '87%',
-                                      heartRate: '110',
-                                      status: 'Emergência',
-                                      onTap: () => _showPatientDetails(context, 'Marcelo Reis'),
-                                    ),
-                                  ],
+                                Text(
+                                  'Fila de Triagem',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                _PriorityLevel(
-                                  label: 'Muito Urgente',
-                                  color: ManchesterTriage.muitoUrgente,
-                                  timeTarget: '10 min',
-                                  patients: [
-                                    _PatientCard(
-                                      name: 'Maria Oliveira',
-                                      age: '72',
-                                      o2Level: '91%',
-                                      heartRate: '105',
-                                      status: 'Muito Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Maria Oliveira'),
-                                    ),
-                                    _PatientCard(
-                                      name: 'Lucia Costa',
-                                      age: '81',
-                                      o2Level: '89%',
-                                      heartRate: '95',
-                                      status: 'Muito Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Lucia Costa'),
-                                    ),
-                                  ],
+                                SizedBox(height: 16),
+                                ..._buildPriorityLevels(),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 20),
+                        // Lista de Pacientes em Atendimento
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
                                 ),
-                                _PriorityLevel(
-                                  label: 'Urgente',
-                                  color: ManchesterTriage.urgente,
-                                  timeTarget: '60 min',
-                                  patients: [
-                                    _PatientCard(
-                                      name: 'Carlos Silva',
-                                      age: '55',
-                                      o2Level: '94%',
-                                      heartRate: '88',
-                                      status: 'Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Carlos Silva'),
-                                    ),
-                                    _PatientCard(
-                                      name: 'Fernando Melo',
-                                      age: '59',
-                                      o2Level: '92%',
-                                      heartRate: '85',
-                                      status: 'Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Fernando Melo'),
-                                    ),
-                                  ],
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Em Atendimento',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                _PriorityLevel(
-                                  label: 'Pouco Urgente',
-                                  color: ManchesterTriage.poucoUrgente,
-                                  timeTarget: '120 min',
-                                  patients: [
-                                    _PatientCard(
-                                      name: 'Ana Lima',
-                                      age: '42',
-                                      o2Level: '97%',
-                                      heartRate: '75',
-                                      status: 'Pouco Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Ana Lima'),
-                                    ),
-                                    _PatientCard(
-                                      name: 'Julia Santos',
-                                      age: '35',
-                                      o2Level: '98%',
-                                      heartRate: '72',
-                                      status: 'Pouco Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Julia Santos'),
-                                    ),
-                                  ],
-                                ),
-                                _PriorityLevel(
-                                  label: 'Não Urgente',
-                                  color: ManchesterTriage.naoUrgente,
-                                  timeTarget: '240 min',
-                                  patients: [
-                                    _PatientCard(
-                                      name: 'Pedro Souza',
-                                      age: '28',
-                                      o2Level: '99%',
-                                      heartRate: '70',
-                                      status: 'Não Urgente',
-                                      onTap: () => _showPatientDetails(context, 'Pedro Souza'),
-                                    ),
-                                  ],
+                                SizedBox(height: 16),
+                                Expanded(
+                                  child: _inTreatmentPatients.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            'Nenhum paciente em atendimento',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          itemCount: _inTreatmentPatients.length,
+                                          itemBuilder: (context, index) {
+                                            final patient = _inTreatmentPatients[index];
+                                            return _TreatmentCard(patient: patient);
+                                          },
+                                        ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -224,7 +289,43 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
+  List<Widget> _buildPriorityLevels() {
+    final Map<String, List<Patient>> patientsByPriority = {
+      'Emergência': [],
+      'Muito Urgente': [],
+      'Urgente': [],
+      'Pouco Urgente': [],
+      'Não Urgente': [],
+    };
+
+    for (var patient in _waitingPatients) {
+      patientsByPriority[patient.status]?.add(patient);
+    }
+
+    return patientsByPriority.entries.map((entry) {
+      return _PriorityLevel(
+        label: entry.key,
+        color: _getStatusColor(entry.key),
+        timeTarget: _getTimeTarget(entry.key),
+        patients: entry.value.map((patient) {
+          return _PatientCard(
+            name: patient.name,
+            age: patient.age,
+            o2Level: patient.o2Level,
+            heartRate: patient.heartRate,
+            status: patient.status,
+            room: patient.room,
+            onTap: () => _showPatientDetails(context, patient.name),
+            onStartTreatment: () => _startTreatment(patient),
+          );
+        }).toList(),
+      );
+    }).toList();
+  }
+
   void _showPatientDetails(BuildContext context, String patientName) {
+    final patient = _waitingPatients.firstWhere((p) => p.name == patientName);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -233,7 +334,11 @@ class DashboardPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Nome: $patientName'),
+            Text('Nome: ${patient.name}'),
+            Text('Idade: ${patient.age} anos'),
+            Text('Saturação O₂: ${patient.o2Level}'),
+            Text('Freq. Cardíaca: ${patient.heartRate} bpm'),
+            Text('Status: ${patient.status}'),
             SizedBox(height: 8),
             Text('Histórico de consultas:'),
             Text('• 12/03/2024 - Consulta de rotina'),
@@ -251,7 +356,7 @@ class DashboardPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PatientDetailsPage(patientName: patientName),
+                  builder: (context) => PatientDetailsPage(patientName: patient.name),
                 ),
               );
             },
@@ -822,13 +927,15 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-class _PatientCard extends StatelessWidget {
+class _PatientCard extends StatefulWidget {
   final String name;
   final String age;
   final String o2Level;
   final String heartRate;
   final String status;
+  final String room;
   final VoidCallback onTap;
+  final VoidCallback onStartTreatment;
 
   const _PatientCard({
     required this.name,
@@ -836,12 +943,231 @@ class _PatientCard extends StatelessWidget {
     required this.o2Level,
     required this.heartRate,
     required this.status,
+    required this.room,
     required this.onTap,
+    required this.onStartTreatment,
   });
+
+  @override
+  State<_PatientCard> createState() => _PatientCardState();
+}
+
+class _PatientCardState extends State<_PatientCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _glowAnimation;
+  bool isUrgent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _glowAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+
+    isUrgent = widget.status.toLowerCase() == 'emergência' || 
+               widget.status.toLowerCase() == 'muito urgente';
+
+    if (isUrgent) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _getStatusColor(widget.status);
+    
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isUrgent ? [
+              BoxShadow(
+                color: statusColor.withOpacity(0.3 * _glowAnimation.value),
+                blurRadius: 12 * _glowAnimation.value,
+                spreadRadius: 2 * _glowAnimation.value,
+              ),
+            ] : [],
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              border: isUrgent ? Border.all(
+                color: statusColor.withOpacity(0.8 * _glowAnimation.value),
+                width: 2.5,
+              ) : null,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.name,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2C3E50),
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Idade: ${widget.age} anos',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _glowAnimation,
+                            builder: (context, child) {
+                              return Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                  boxShadow: isUrgent ? [
+                                    BoxShadow(
+                                      color: statusColor.withOpacity(0.6 * _glowAnimation.value),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ] : [],
+                                ),
+                              );
+                            },
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            widget.status,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF8FAFB),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _VitalSignIndicator(
+                              icon: Icons.favorite,
+                              title: 'Freq. Cardíaca',
+                              value: '${widget.heartRate} bpm',
+                              color: Color(0xFFE57373),
+                              isAlert: int.parse(widget.heartRate) > 100,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: _VitalSignIndicator(
+                              icon: Icons.air,
+                              title: 'Nível O₂',
+                              value: widget.o2Level,
+                              color: Color(0xFF64B5F6),
+                              isAlert: int.parse(widget.o2Level.replaceAll('%', '')) < 90,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: widget.onStartTreatment,
+                        icon: Icon(Icons.medical_services),
+                        label: Text('Atender'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: statusColor,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    IconButton(
+                      onPressed: widget.onTap,
+                      icon: Icon(Icons.more_vert),
+                      tooltip: 'Mais detalhes',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'emergente':
+      case 'emergência':
         return ManchesterTriage.emergente;
       case 'muito urgente':
         return ManchesterTriage.muitoUrgente;
@@ -855,155 +1181,62 @@ class _PatientCard extends StatelessWidget {
         return ManchesterTriage.poucoUrgente;
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(status);
-    
-    return InkWell(
-      onTap: onTap,
-      child: Card(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2C3E50),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Idade: $age anos',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          status,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF8FAFB),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    _VitalSign(
-                      icon: Icons.favorite,
-                      title: 'Freq. Cardíaca',
-                      value: '$heartRate bpm',
-                      color: Color(0xFFE57373),
-                    ),
-                    SizedBox(height: 12),
-                    _VitalSign(
-                      icon: Icons.air,
-                      title: 'Nível O₂',
-                      value: o2Level,
-                      color: Color(0xFF64B5F6),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-class _VitalSign extends StatelessWidget {
+class _VitalSignIndicator extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
   final Color color;
+  final bool isAlert;
 
-  const _VitalSign({
+  const _VitalSignIndicator({
     required this.icon,
     required this.title,
     required this.value,
     required this.color,
+    this.isAlert = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isAlert ? color.withOpacity(0.2) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: isAlert ? Border.all(color: color) : null,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 20,
           ),
-          child: Icon(icon, size: 18, color: color),
-        ),
-        SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+          SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2C3E50),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isAlert ? color : Colors.black87,
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1320,6 +1553,61 @@ class _PriorityLegendItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TreatmentCard extends StatelessWidget {
+  final Patient patient;
+
+  const _TreatmentCard({required this.patient});
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'emergência':
+        return ManchesterTriage.emergente;
+      case 'muito urgente':
+        return ManchesterTriage.muitoUrgente;
+      case 'urgente':
+        return ManchesterTriage.urgente;
+      case 'pouco urgente':
+        return ManchesterTriage.poucoUrgente;
+      case 'não urgente':
+        return ManchesterTriage.naoUrgente;
+      default:
+        return ManchesterTriage.poucoUrgente;
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: _getStatusColor(patient.status).withOpacity(0.2),
+          child: Icon(
+            Icons.medical_services,
+            color: _getStatusColor(patient.status),
+          ),
+        ),
+        title: Text(patient.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sala: ${patient.room}'),
+            Text('Início: ${_formatDateTime(patient.arrivalTime)}'),
+          ],
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: () {
+          // Implementar visualização detalhada do atendimento
+        },
       ),
     );
   }
