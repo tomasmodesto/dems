@@ -147,7 +147,7 @@ class _DashboardPageState extends State<DashboardPage> {
           // Sidebar
           Container(
             width: 250,
-            color: Color(0xFF424242), // Cinza escuro
+            color: Color(0xFF424242),
             child: Column(
               children: [
                 Padding(
@@ -189,19 +189,6 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      _PriorityScale(),
-                    ],
-                  ),
                   SizedBox(height: 20),
                   Expanded(
                     child: Row(
