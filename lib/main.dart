@@ -1588,26 +1588,96 @@ class _TreatmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getStatusColor(patient.status).withOpacity(0.2),
-          child: Icon(
-            Icons.medical_services,
-            color: _getStatusColor(patient.status),
-          ),
-        ),
-        title: Text(patient.name),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Sala: ${patient.room}'),
-            Text('Início: ${_formatDateTime(patient.arrivalTime)}'),
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: _getStatusColor(patient.status).withOpacity(0.2),
+                  child: Icon(
+                    Icons.medical_services,
+                    color: _getStatusColor(patient.status),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        patient.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'Sala: ${patient.room}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      Text(
+                        'Início: ${_formatDateTime(patient.arrivalTime)}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _VitalSignIndicator(
+                      icon: Icons.favorite,
+                      title: 'Freq. Cardíaca',
+                      value: '${patient.heartRate} bpm',
+                      color: Color(0xFFE57373),
+                      isAlert: int.parse(patient.heartRate) > 100,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: _VitalSignIndicator(
+                      icon: Icons.air,
+                      title: 'Nível O₂',
+                      value: patient.o2Level,
+                      color: Color(0xFF64B5F6),
+                      isAlert: int.parse(patient.o2Level.replaceAll('%', '')) < 90,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientDetailsPage(patientName: patient.name),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.visibility),
+                  label: Text('Ver detalhes'),
+                ),
+              ],
+            ),
           ],
         ),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          // Implementar visualização detalhada do atendimento
-        },
       ),
     );
   }
