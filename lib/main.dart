@@ -165,18 +165,27 @@ class _DashboardPageState extends State<DashboardPage> {
                   icon: Icons.dashboard,
                   title: 'Dashboard',
                   isSelected: true,
-                ),
-                _SidebarItem(
-                  icon: Icons.people,
-                  title: 'Pacientes',
-                ),
-                _SidebarItem(
-                  icon: Icons.calendar_today,
-                  title: 'Consultas',
+                  onTap: () {
+                    // Já estamos no Dashboard
+                  },
                 ),
                 _SidebarItem(
                   icon: Icons.settings,
                   title: 'Configurações',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettingsPage(),
+                      ),
+                    );
+                  },
+                ),
+                Spacer(), // Empurra o item abaixo para o final da sidebar
+                _SidebarItem(
+                  icon: Icons.info_outline,
+                  title: 'Versão 1.0.0',
+                  enabled: false,
                 ),
               ],
             ),
@@ -202,7 +211,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Fila de Triagem',
+                                  'Fila de Prioridade',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -880,35 +889,51 @@ class _SidebarItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final bool isSelected;
+  final bool enabled;
+  final VoidCallback? onTap;
 
   const _SidebarItem({
     required this.icon,
     required this.title,
     this.isSelected = false,
+    this.enabled = true,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: isSelected ? Color(0xFF2E7D32).withOpacity(0.2) : null,
-        border: Border(
-          left: BorderSide(
-            color: isSelected ? Color(0xFF2E7D32) : Colors.transparent,
-            width: 4,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? Color(0xFF2E7D32).withOpacity(0.2) : null,
+            border: Border(
+              left: BorderSide(
+                color: isSelected ? Color(0xFF2E7D32) : Colors.transparent,
+                width: 4,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: enabled ? Colors.white : Colors.white.withOpacity(0.5),
+              ),
+              SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  color: enabled ? Colors.white : Colors.white.withOpacity(0.5),
+                  fontSize: 16,
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white),
-          SizedBox(width: 12),
-          Text(
-            title,
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ],
       ),
     );
   }
@@ -1666,6 +1691,154 @@ class _TreatmentCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Configurações'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(16),
+        children: [
+          _SettingsSection(
+            title: 'Geral',
+            children: [
+              _SettingsItem(
+                icon: Icons.color_lens,
+                title: 'Tema',
+                subtitle: 'Claro',
+                onTap: () {
+                  // Implementar mudança de tema
+                },
+              ),
+              _SettingsItem(
+                icon: Icons.notifications,
+                title: 'Notificações',
+                subtitle: 'Ativadas',
+                onTap: () {
+                  // Implementar configurações de notificações
+                },
+              ),
+            ],
+          ),
+          _SettingsSection(
+            title: 'Sistema',
+            children: [
+              _SettingsItem(
+                icon: Icons.update,
+                title: 'Verificar atualizações',
+                subtitle: 'Versão atual: 1.0.0',
+                onTap: () {
+                  // Implementar verificação de atualizações
+                },
+              ),
+              _SettingsItem(
+                icon: Icons.backup,
+                title: 'Backup de dados',
+                subtitle: 'Último backup: Nunca',
+                onTap: () {
+                  // Implementar backup de dados
+                },
+              ),
+            ],
+          ),
+          _SettingsSection(
+            title: 'Sobre',
+            children: [
+              _SettingsItem(
+                icon: Icons.info,
+                title: 'Informações do sistema',
+                subtitle: 'DEMS - Sistema de Gerenciamento de Emergência',
+                onTap: () {
+                  // Mostrar informações do sistema
+                },
+              ),
+              _SettingsItem(
+                icon: Icons.help,
+                title: 'Ajuda e suporte',
+                subtitle: 'Documentação e contato',
+                onTap: () {
+                  // Abrir página de ajuda
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsSection({
+    required this.title,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
